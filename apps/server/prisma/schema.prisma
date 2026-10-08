@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  passwordHash String
+  displayName  String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  ownedBoards  Board[]       @relation("BoardOwner")
+  memberships  BoardMember[]
+  events       BoardEvent[]
+
+  @@map("users")
+}
+
+model Board {
+  id        String          @id @default(uuid())
+  roomId    String          @unique
+  name      String?
+  ownerId   String?
+  version   Int             @default(0)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  owner     User?           @relation("BoardOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  members   BoardMember[]
+  strokes   StrokeData[]
+  events    BoardEvent[]
+  snapshots BoardSnapshot[]
+
+  @@map("boards")
+}
+
+model BoardMember {
+  id        String   @id @default(uuid())
+  boardId   String
+  userId    String
+  role      Role     @default(EDITOR)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([boardId, userId])
+  @@map("board_members")
+}
+
+model StrokeData {
+  id        String   @id @default(uuid())
+  boardId   String
+  strokeId  String   @unique
+  data      Json
+  createdAt DateTime @default(now())
+  board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  @@index([boardId])
+  @@map("strokes")
+}
+
+model ProcessedEvent {
+  id        String   @id @default(uuid())
+  eventId   String   @unique
+  roomId    String
+  createdAt DateTime @default(now())
+
+  @@index([roomId])
+  @@map("processed_events")
+}
+
+model BoardEvent {
+  id              String   @id @default(uuid())
+  eventId         String   @unique
+  boardId         String
+  roomId          String
+  version         Int
+  eventType       String
+  userId          String?
+  userDisplayName String?
+  payload         Json
+  createdAt       DateTime @default(now())
+  board           Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([boardId, version])
+  @@index([boardId])
+  @@index([roomId])
+  @@index([version])
+  @@index([createdAt])
+  @@index([userId])
+  @@map("board_events")
+}
+
+model BoardSnapshot {
+  id        String   @id @default(uuid())
+  boardId   String
+  roomId    String
+  version   Int
+  state     Json
+  createdAt DateTime @default(now())
+  board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  @@unique([boardId, version])
+  @@index([boardId])
+  @@index([roomId])
+  @@index([version])
+  @@map("board_snapshots")
+}
+
+

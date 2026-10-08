@@ -1,0 +1,24 @@
+{
+  "name": "real-time-collaborative-whiteboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-grade Real-Time Collaborative Whiteboard monorepo",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace=apps/web",
+    "dev:server": "npm run dev --workspace=apps/server",
+    "dev": "npm run dev:web",
+    "build:shared": "npm run build --workspace=packages/shared",
+    "build:web": "npm run build --workspace=apps/web",
+    "build:server": "npm run build --workspace=apps/server",
+    "build": "npm run build:shared && npm run build:server && npm run build:web",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}
